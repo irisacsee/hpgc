@@ -25,6 +25,7 @@ public class ImageIO {
         height = source.getRasterYSize();
         projection = source.GetProjection();
         transform = source.GetGeoTransform();
+        System.out.println("width: " + width + ", height: " + height);
 
         double[][] bandValues = new double[bands][width * height];
         for (int k = 0; k < bands; ++k) {
