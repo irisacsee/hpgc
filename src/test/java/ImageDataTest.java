@@ -15,6 +15,6 @@ public class ImageDataTest {
         int[] ans = isodata.getResult();
         long end = System.currentTimeMillis();
         System.out.println("用时：" + (end - start));
-        imageIO.write(ans, "D:\\xx1.tif");
+        // imageIO.write(ans, "D:\\xx1.tif");
     }
 }

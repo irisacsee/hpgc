@@ -4,6 +4,7 @@ import org.xcgis.hpgc.Main;
 import org.xcgis.hpgc.Tuple;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class ISODATA {
@@ -51,7 +52,11 @@ public class ISODATA {
             System.out.print("第" + (count + 1) + "轮循环为");
             if (centers.size() <= K / 2 || (count % 2 == 0 && centers.size() < 2 * K)) {
                 System.out.println("分裂操作");
-                divide();
+                int check = divide();
+                if (check == 0) {
+                    System.out.println("分裂未完成，开始合并");
+                    merge();
+                }
             } else if (clusters.size() > 2 * K || count % 2 == 1) {
                 System.out.println("合并操作");
                 merge();
@@ -174,7 +179,7 @@ public class ISODATA {
         return new Tuple<>(maxSDVectorComponents, maxSDVectorComponentsIndex);
     }
 
-    public void divide() {
+    public int divide() {
         System.out.println("分裂前的中心点如下：");
         for (double[] center : centers) {
             System.out.print("(");
@@ -191,6 +196,7 @@ public class ISODATA {
         double[] maxSDVectorComponents = t2.getV1();
         int[] maxSDVectorComponentsIndex = t2.getV2();
 
+        int check = 0;
         int oldSize = centers.size();
         for (int j = 0; j < oldSize; ++j) {
             List<Integer> cluster = clusters.get(j);
@@ -209,6 +215,7 @@ public class ISODATA {
                 }
                 centers.add(newCenter);
                 clusters.add(new ArrayList<>());
+                ++check;
             }
         }
 
@@ -220,6 +227,8 @@ public class ISODATA {
             }
             System.out.println(")");
         }
+
+        return check;
     }
 
     public void merge() {
@@ -232,8 +241,8 @@ public class ISODATA {
             System.out.println(")");
         }
 
-        int oldSize = centers.size();
-        for (int i = 0; i < oldSize; ++i) {
+        List<Tuple<Tuple<Integer, Integer>, Double>> distancesWithIndex = new ArrayList<>();
+        for (int i = 0; i < centers.size(); ++i) {
             for (int j = i + 1; j < centers.size(); ++j) {
                 double distance = 0;
                 for (int k = 0; k < dim; ++k) {
@@ -241,16 +250,32 @@ public class ISODATA {
                 }
                 distance = Math.pow(distance, 0.5);
                 if (distance < thetaC) {
-                    int ni = clusters.get(i).size();
-                    int nj = clusters.get(j).size();
-                    for (int k = 0; k < dim; ++k) {
-                        centers.get(i)[k] = (ni * centers.get(i)[k] + nj * centers.get(j)[k]) / (ni + nj);
-                    }
-                    centers.remove(j);
-                    clusters.get(i).addAll(clusters.get(j));
-                    clusters.remove(j);
-                    --j;
+                    distancesWithIndex.add(new Tuple<>(new Tuple<>(i, j), distance));
                 }
+            }
+        }
+
+        distancesWithIndex.sort(Comparator.comparing(Tuple::getV2));
+        int l = 0;
+        int[] check = new int[centers.size()];
+        for (int m = 0; m < distancesWithIndex.size(); ++m) {
+            if (l == L) {
+                break;
+            }
+            int i = distancesWithIndex.get(m).getV1().getV1();
+            int j = distancesWithIndex.get(m).getV1().getV2();
+            if (check[i] != 1 && check[j] != 1) {
+                int ni = clusters.get(i).size();
+                int nj = clusters.get(j).size();
+                for (int k = 0; k < dim; ++k) {
+                    centers.get(i)[k] = (ni * centers.get(i)[k] + nj * centers.get(j)[k]) / (ni + nj);
+                }
+                centers.remove(j);
+                clusters.get(i).addAll(clusters.get(j));
+                clusters.remove(j);
+                check[i] = 1;
+                check[j] = 1;
+                ++l;
             }
         }
 
