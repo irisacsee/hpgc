@@ -7,10 +7,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * 串行版ISODATA算法，在本类的方法中，循环里的j一般为centers的index，k一般为波段数的循环index
+ */
 public class ISODATA {
+    // 影像数据
     private double[][] data;
+    // 聚类中心
     private List<double[]> centers;
+    // 聚类结果，只记录被聚类点的索引
     private List<List<Integer>> clusters;
+    // 分别为：预期的聚类中心数目，每一聚类域中最少的样本数目，一个聚类域中样本距离分布的标准差
+    // 两个聚类中心间的最小距离，在一次迭代运算中可以合并的聚类中心的最多对数，迭代运算的次数，波段数
     private int K, thetaN, thetaS, thetaC, L, I, dim;
 
     public ISODATA(double[][] data, List<double[]> centers,
@@ -30,6 +38,11 @@ public class ISODATA {
         this.dim = data[0].length;
     }
 
+    /**
+     * 获取聚类结果，按照clusters中记录的索引组织result
+     *
+     * @return 最终聚类结果
+     */
     public int[] getResult() {
         process();
 
@@ -43,6 +56,9 @@ public class ISODATA {
         return result;
     }
 
+    /**
+     * 迭代计算过程
+     */
     public void process() {
         for (int count = 0; count < I; ++count) {
             System.out.println("第" + (count + 1) + "次聚类");
@@ -64,6 +80,9 @@ public class ISODATA {
         }
     }
 
+    /**
+     * 将所有模式样本分给最近的聚类
+     */
     public void clump() {
         for (List<Integer> cluster : clusters) {
             cluster.clear();
@@ -87,6 +106,9 @@ public class ISODATA {
         }
     }
 
+    /**
+     * 如果clusters(j)中的样本数目小于thetaN，则取消该样本子集
+     */
     public void checkClusterCount() {
         for (int i = 0; i < centers.size(); ++i) {
             if (clusters.get(i).size() < thetaN) {
@@ -115,6 +137,9 @@ public class ISODATA {
         }
     }
 
+    /**
+     * 修正聚类中心
+     */
     public void updateCenters() {
         for (int j = 0; j < centers.size(); ++j) {
             List<Integer> cluster = clusters.get(j);
@@ -126,18 +151,14 @@ public class ISODATA {
                 centers.get(j)[k] = sum / cluster.size();
             }
         }
-
-//        int m = 1;
-//        for (List<Integer> cluster : clusters) {
-//            System.out.print("第" + m + "类(");
-//            for (int index : cluster) {
-//                System.out.print("x" + (index + 1) + ",");
-//            }
-//            System.out.println(")");
-//            m += 1;
-//        }
     }
 
+    /**
+     * 计算各聚类域中模式样本与各聚类中心间的平均距离（此步骤中用平均距离与聚类数目的乘积做代替，即距离总和）
+     * 及全部模式样本和其对应聚类中心的总平均距离
+     *
+     * @return 各聚类域中模式样本与各聚类中心间的距离总和与全部模式样本和其对应聚类中心的总平均距离的二元组
+     */
     public Tuple<double[], Double> getAverageDistance() {
         double averageDistance = 0;
         double[] adInClusters = new double[centers.size()];
@@ -158,6 +179,11 @@ public class ISODATA {
         return new Tuple<>(adInClusters, averageDistance);
     }
 
+    /**
+     * 计算每个聚类中样本距离的标准差向量，且求出每一标准差向量中的最大分量
+     *
+     * @return 各聚类标准差向量的最大分量及它们对应的波段数的数组二元组
+     */
     public Tuple<double[], int[]> getMaxSDVectorComponents() {
         double[][] sdVectors = new double[centers.size()][dim];
         double[] maxSDVectorComponents = new double[centers.size()];
@@ -179,6 +205,11 @@ public class ISODATA {
         return new Tuple<>(maxSDVectorComponents, maxSDVectorComponentsIndex);
     }
 
+    /**
+     * 聚类的分裂操作
+     *
+     * @return 用于判断分裂操作是否完成的标记，若结果为0，说明分裂操作未完成
+     */
     public int divide() {
         System.out.println("分裂前的中心点如下：");
         for (double[] center : centers) {
@@ -231,6 +262,9 @@ public class ISODATA {
         return check;
     }
 
+    /**
+     * 聚类的合并操作
+     */
     public void merge() {
         System.out.println("合并前的中心点如下：");
         for (double[] center : centers) {

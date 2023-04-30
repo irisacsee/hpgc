@@ -6,8 +6,10 @@ import org.gdal.gdal.Driver;
 import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 
+/**
+ * 影像读取写入操作封装类
+ */
 public class ImageIO {
-    private Driver driver;
     private int width;
     private int height;
     private String projection;
@@ -18,7 +20,6 @@ public class ImageIO {
     public double[][] read(String filePath) {
         gdal.AllRegister();
         Dataset source = gdal.Open(filePath, gdalconst.GA_ReadOnly);
-        driver = source.GetDriver();
 
         int bands = source.getRasterCount();
         width = source.getRasterXSize();
