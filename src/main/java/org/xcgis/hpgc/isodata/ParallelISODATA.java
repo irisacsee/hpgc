@@ -81,7 +81,7 @@ public class ParallelISODATA {
                     System.out.println("分裂未完成，开始合并");
                     merge();
                 }
-            } else if (clusters.size() > 2 * K || count % 2 == 1) {
+            } else if (centers.size() > 2 * K || count % 2 == 1) {
                 System.out.println("合并操作");
                 merge();
             }
@@ -96,6 +96,7 @@ public class ParallelISODATA {
             cluster.clear();
         }
 
+        long start = System.currentTimeMillis();
         CountDownLatch countDownLatch = new CountDownLatch(partition);
         for (int p = 0; p < partition; ++p) {
             int finalP = p;
@@ -123,6 +124,8 @@ public class ParallelISODATA {
             }).start();
         }
         countDownLatch.await();
+        long end = System.currentTimeMillis();
+        System.out.println("聚类用时" + (end - start));
     }
 
     /**
@@ -160,6 +163,7 @@ public class ParallelISODATA {
      * 修正聚类中心，按照聚类不同分发到不同线程进行并行处理
      */
     public void updateCenters() throws InterruptedException {
+        long start = System.currentTimeMillis();
         CountDownLatch countDownLatch = new CountDownLatch(centers.size());
         for (int j = 0; j < centers.size(); ++j) {
             int finalJ = j;
@@ -176,6 +180,19 @@ public class ParallelISODATA {
             }).start();
         }
         countDownLatch.await();
+
+        long end = System.currentTimeMillis();
+        System.out.println("更新聚类用时" + (end - start));
+
+//        int m = 1;
+//        for (List<Integer> cluster : clusters) {
+//            System.out.print("第" + m + "类(");
+//            for (int index : cluster) {
+//                System.out.print("x" + (index + 1) + ",");
+//            }
+//            System.out.println(")");
+//            m += 1;
+//        }
     }
 
     /**
@@ -261,12 +278,15 @@ public class ParallelISODATA {
             System.out.println(")");
         }
 
+        long start = System.currentTimeMillis();
         Tuple<double[], Double> t1 = getAverageDistance();
         double[] adInClusters = t1.getV1();
         double averageDistance = t1.getV2();
         Tuple<double[], int[]> t2 = getMaxSDVectorComponents();
         double[] maxSDVectorComponents = t2.getV1();
         int[] maxSDVectorComponentsIndex = t2.getV2();
+        long end = System.currentTimeMillis();
+        System.out.println("平均距离、标准差向量等计算用时" + (end - start));
 
         int check = 0;
         int oldSize = centers.size();

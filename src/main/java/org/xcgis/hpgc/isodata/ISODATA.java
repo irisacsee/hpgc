@@ -220,12 +220,15 @@ public class ISODATA {
             System.out.println(")");
         }
 
+        long start = System.currentTimeMillis();
         Tuple<double[], Double> t1 = getAverageDistance();
         double[] adInClusters = t1.getV1();
         double averageDistance = t1.getV2();
         Tuple<double[], int[]> t2 = getMaxSDVectorComponents();
         double[] maxSDVectorComponents = t2.getV1();
         int[] maxSDVectorComponentsIndex = t2.getV2();
+        long end = System.currentTimeMillis();
+        System.out.println("用时" + (end - start));
 
         int check = 0;
         int oldSize = centers.size();
